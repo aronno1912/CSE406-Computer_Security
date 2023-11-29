@@ -1,14 +1,5 @@
 from util import *
-# def print_ascii_hex(sentence):
 
-#     for char in sentence:
-#         if char.isalpha():
-#             ascii_value = ord(char)
-#             hex_value = hex(ascii_value)[2:].upper()
-#             print(hex_value, end=' ')
-#         elif char.isspace():
-#             print('20', end=' ')  # ASCII value for space
-#     print()  # Print a newline at the end
 key = []
 ptWithPad = []
 roundKeyMatrices = []
@@ -79,26 +70,6 @@ def convert_to_matrix_row_major(ptWithPad):
 
     return matrix
 
-#
-# def byteSubstitutionFromS_Box(wordMatrix, row_index, flag):
-#     if row_index < 0 or row_index >= len(wordMatrix):
-#         raise ValueError("Invalid row index")
-#
-#     for i in range(len(wordMatrix[row_index])):
-#         if flag:
-#             s_val = BitVector(intVal=Sbox[wordMatrix[row_index][i].intValue()], size=8)
-#         else:
-#             s_val = BitVector(intVal=InvSbox[wordMatrix[row_index][i].intValue()], size=8)
-#         wordMatrix[row_index][i] = s_val
-
-# def byteSubstitutionFromS_Box(row, flag):
-#     for i in range(len(row)):
-#         if flag:
-#             s_val = BitVector(intVal=Sbox[row[i].intValue()], size=8)
-#         else:
-#             s_val = BitVector(intVal=InvSbox[row[i].intValue()], size=8)
-#         row[i] = s_val
-
 
 def byteSubstitutionFromS_Box(row, flag):
 
@@ -138,17 +109,12 @@ def roundConsRow(idx):
     return row
 
 ########################## Round key###########################################
-def roundKey(mat):
+def roundKey(mat,ind):
     new_matrix = []
     shifted_row=circular_left_shift(mat[3])
     byteSubstitutionFromS_Box(shifted_row, True)
-    rc=roundConsRow(1)
+    rc=roundConsRow(ind)
     rc=convert_int_list_to_hex(rc)
-    # g=rc^shifted_row
-    # row1 = (mat[0]^ g)
-    # row2 = (row1^ mat[1])
-    # row3 = (row2^mat[2])
-    # row4 = (row3^ mat[3])
     g=xor_hex_rows(rc,shifted_row)
     row1=xor_hex_rows(mat[0],g)
     row2=xor_hex_rows(row1,mat[1])
@@ -165,6 +131,19 @@ def roundKey(mat):
     transposed_matrix = [list(row) for row in zip(*new_matrix)]
     return transposed_matrix
 
+def generateAllRoundKeyMatrices(initial_matrix):
+    transposed_matrix = [list(row) for row in zip(*initial_matrix)]
+    roundKeyMatrices.append(transposed_matrix)
+
+    for i in range(1, 11):
+        # Call your roundKey function here with the appropriate arguments
+        new_matrix = roundKey(initial_matrix,i)
+        roundKeyMatrices.append(new_matrix)
+        transposed_matrix = [list(row) for row in zip(*new_matrix)]
+        initial_matrix=transposed_matrix
+
+
+
 
 # Example usage:
 sentence = "Thats my Kung Fu"
@@ -173,18 +152,22 @@ plain_text_handling(sentence, key)
 ################# print matrices###############
 originalKeyMat = []
 originalKeyMat = convert_to_matrix_row_major(key)
-ck=roundKey(originalKeyMat)
-# for i, matrix in enumerate(matrices, start=1):
-#     print(f"Matrix p{i}:")
-#     for row in matrix:
-#         print(row)
-#     print()
-# n = 0
+generateAllRoundKeyMatrices(originalKeyMat)
+
+
+###################################### debug ###################
 def print_matrix(matrix):
     for row in matrix:
         print(row)
 
-print_matrix(ck)
+def print_list_of_matrices(matrix_list):
+    for idx, matrix in enumerate(matrix_list, start=1):
+        print(f"Matrix {idx}:")
+        print_matrix(matrix)
+        print()
+
+##################################################################################################
+print_list_of_matrices(roundKeyMatrices)
 
 
 #####################################################
