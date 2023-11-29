@@ -3,6 +3,7 @@ from util import *
 key = []
 ptWithPad = []
 roundKeyMatrices = []
+msgMatrices = []
 
 
 def convert_str_array_to_int(input_array):
@@ -43,9 +44,9 @@ def plain_text_handling(sentence, array):
 
 
 ######################## make matrix ##################################
-msgMatrices = []
 
 
+### col major
 def convert_to_matrix(ptWithPad, listOfMat):
     num_matrices = len(ptWithPad) // 16
 
@@ -55,7 +56,7 @@ def convert_to_matrix(ptWithPad, listOfMat):
         transposed_matrix = list(map(list, zip(*matrix)))
         listOfMat.append(transposed_matrix)
 
-    return listOfMat
+
 
 
 ############################### key ############################
@@ -81,6 +82,16 @@ def byteSubstitutionFromS_Box(row, flag):
         row[i]=row[i][2:]
     #print(row)
 
+
+def byte_substitution_matrix(matrix):
+    new_matrix = []
+
+    for row in matrix:
+        byteSubstitutionFromS_Box(row, True)
+        new_matrix.append(row.copy())  # Copy the modified row to the new matrix
+
+    return new_matrix
+
 #######################################################################
 def xor_rows(row1, row2):
     if len(row1) != len(row2):
@@ -96,6 +107,18 @@ def xor_hex_rows(hex_row1, hex_row2):
     result_row = [hex(int(element1, 16) ^ int(element2, 16))[2:] for element1, element2 in zip(hex_row1, hex_row2)]
     return result_row
 
+
+def xor_matrices(mat1, mat2):
+    if len(mat1) != len(mat2) or any(len(row1) != len(row2) for row1, row2 in zip(mat1, mat2)):
+        raise ValueError("Matrices must have the same dimensions for XOR operation.")
+
+    result_matrix = []
+    for row1, row2 in zip(mat1, mat2):
+        result_row = xor_hex_rows(row1, row2)
+        result_matrix.append(result_row)
+
+    return result_matrix
+
 def circular_left_shift(row):
     if not row:
         return row  # Return an empty row as is
@@ -103,6 +126,17 @@ def circular_left_shift(row):
     shifted_row = row[1:] + [row[0]]
     return shifted_row
 
+def cyclic_left_shift_whole_mat(matrix):
+    # Cyclic left shift the 2nd row by 1
+    matrix[1] = matrix[1][1:] + matrix[1][:1]
+
+    # Cyclic left shift the 3rd row by 2
+    matrix[2] = matrix[2][2:] + matrix[2][:2]
+
+    # Cyclic left shift the 4th row by 3
+    matrix[3] = matrix[3][3:] + matrix[3][:3]
+
+    return matrix
 
 def roundConsRow(idx):
     row = [roundConstant[idx], 0x00, 0x00, 0x00]
@@ -146,13 +180,7 @@ def generateAllRoundKeyMatrices(initial_matrix):
 
 
 # Example usage:
-sentence = "Thats my Kung Fu"
-plain_text_handling(sentence, key)
 
-################# print matrices###############
-originalKeyMat = []
-originalKeyMat = convert_to_matrix_row_major(key)
-generateAllRoundKeyMatrices(originalKeyMat)
 
 
 ###################################### debug ###################
@@ -167,7 +195,30 @@ def print_list_of_matrices(matrix_list):
         print()
 
 ##################################################################################################
-print_list_of_matrices(roundKeyMatrices)
 
 
-#####################################################
+
+##################################################### main() ###############################
+
+sentence = "Thats my Kung Fu"
+plain_text_handling(sentence, key)
+originalKeyMat = []
+originalKeyMat = convert_to_matrix_row_major(key)
+generateAllRoundKeyMatrices(originalKeyMat)
+#print_list_of_matrices(roundKeyMatrices)
+msg="Two One Nine Two"
+plain_text_handling(msg, ptWithPad)
+convert_to_matrix(ptWithPad,msgMatrices)
+#print_matrix(msgMatrices[0])
+
+########## round 0 ########################
+state_mat=xor_matrices(msgMatrices[0],roundKeyMatrices[0])
+
+
+
+
+############### round 1 to 9##############################
+state_mat=byte_substitution_matrix(state_mat)
+
+state_mat=cyclic_left_shift_whole_mat(state_mat)
+print_matrix(state_mat)
