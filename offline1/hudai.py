@@ -299,7 +299,8 @@ print("In ASCII :",msg)
 print("In Hex :")
 plain_text_handling(msg, ptWithPad)
 convert_to_matrix(ptWithPad,msgMatrices)
-initializationVector=generate_random_iv_matrix()
+# initializationVector=generate_random_iv_matrix()
+initializationVector=[['51','90','54','43'],['b8','42','53','50'],['bc','51','69','cc'],['3d','37','56','a0']]
 tempIV=initializationVector
 print()
 print("Ciphered Text :")
@@ -307,8 +308,11 @@ print("In Hex :")
 st_enc=time.time()
 # Iterate over the size of msgMatrices list
 for iter in range(len(msgMatrices)):
-
+    print("msg matrix")
+    print_matrix(msgMatrices[iter])
     tempMat=xor_matrices(msgMatrices[iter],tempIV)
+    print("eta xor hoilo")
+    print_matrix(tempMat)
     ###################### round 0 #####################################################
     state_mat = xor_matrices(tempMat, roundKeyMatrices[0])
 
