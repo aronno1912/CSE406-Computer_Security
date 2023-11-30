@@ -1,16 +1,16 @@
-# This is a sample Python script.
+import os
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+def generate_random_iv_matrix():
+    # Generate a random 16-byte IV
+    iv = os.urandom(16)
 
+    # Convert the IV to a 4x4 matrix of hex strings
+    iv_hex_array = [format(byte, '02x') for byte in iv]
+    iv_matrix = [iv_hex_array[i:i+4] for i in range(0, len(iv_hex_array), 4)]
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+    return iv_matrix
 
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+# Example usage:
+iv_matrix = generate_random_iv_matrix()
+for row in iv_matrix:
+    print(row)

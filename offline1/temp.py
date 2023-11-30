@@ -7,7 +7,6 @@ roundKeyMatrices = []
 msgMatrices = []
 cipherTextMatrices = []
 initializationVector=[]
-afterDecryptionSentences=[]
 
 def generate_random_iv_hex_array():
     # Generate a random 16-byte IV
@@ -17,17 +16,6 @@ def generate_random_iv_hex_array():
     iv_hex_array = [format(byte, '02x') for byte in iv]
 
     return iv_hex_array
-
-def generate_random_iv_matrix():
-    # Generate a random 16-byte IV
-    iv = os.urandom(16)
-
-    # Convert the IV to a 4x4 matrix of hex strings
-    iv_hex_array = [format(byte, '02x') for byte in iv]
-    iv_matrix = [iv_hex_array[i:i+4] for i in range(0, len(iv_hex_array), 4)]
-
-    return iv_matrix
-
 
 def convert_str_array_to_int(input_array):
     int_array = [int(element) for element in input_array]
@@ -73,7 +61,7 @@ def plain_text_handling(sentence, array):
 
     # Pad with '00' until the length is 16
     while len(array) % 16 != 0:
-        array.append('20')         ########################       space padding!!!!!!!!!
+        array.append('00')
 
     # Split into blocks of length 16 and print
     for i in range(0, len(array), 16):
@@ -273,62 +261,50 @@ originalKeyMat = []
 originalKeyMat = convert_to_matrix_row_major(key)
 generateAllRoundKeyMatrices(originalKeyMat)
 #print_list_of_matrices(roundKeyMatrices)
-msg="Never Gonna Give you up never gonna let you down"
+msg="Two One Nine Two"
 plain_text_handling(msg, ptWithPad)
 convert_to_matrix(ptWithPad,msgMatrices)
-initializationVector=generate_random_iv_matrix()
-tempIV=initializationVector
+#print_matrix(msgMatrices[0])
 
-# Iterate over the size of msgMatrices list
-for iter in range(len(msgMatrices)):
+########## round 0 ########################
+state_mat=xor_matrices(msgMatrices[0],roundKeyMatrices[0])
 
-    tempMat=xor_matrices(msgMatrices[iter],tempIV)
-    ###################### round 0 #####################################################
-    state_mat = xor_matrices(tempMat, roundKeyMatrices[0])
-
-    #####################Rounds 1 to 9 ################################
-    for i in range(1, 10):
-        state_mat = byte_substitution_matrix(state_mat, True)
-        state_mat = cyclic_left_shift_whole_mat(state_mat)
-        state_mat = mix_column(Mixer, state_mat)
-        state_mat = xor_matrices(state_mat, roundKeyMatrices[i])
-
-    #####################Round 10#########################################
-    state_mat = byte_substitution_matrix(state_mat, True)
+############### round 1 to 9##############################
+for i in range(1,10):
+    state_mat = byte_substitution_matrix(state_mat,True)
     state_mat = cyclic_left_shift_whole_mat(state_mat)
-    state_mat = xor_matrices(state_mat, roundKeyMatrices[10])
-    tempIV=state_mat
+    state_mat = mix_column(Mixer, state_mat)
+    state_mat = xor_matrices(state_mat, roundKeyMatrices[i])
+####################### round 10 ################################
 
-    print_matrix(state_mat)
-    cipherTextMatrices.append(state_mat)
+state_mat = byte_substitution_matrix(state_mat,True)
+state_mat = cyclic_left_shift_whole_mat(state_mat)
+state_mat = xor_matrices(state_mat, roundKeyMatrices[10])
+print_matrix(state_mat)
+cipherTextMatrices.append(state_mat)
 
 ############################## done with encryption ##################
 
-tempIV=initializationVector
 ############################## start decryption ##############################
-for d in range(len(msgMatrices)):
 
-    inv_state_mat=xor_matrices(cipherTextMatrices[d],roundKeyMatrices[10])
-    for i in range(1,10):
-        inv_state_mat = cyclic_right_shift_whole_mat(inv_state_mat)
-        inv_state_mat = byte_substitution_matrix(inv_state_mat,False)
-        inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[10 - i])
-        inv_state_mat = mix_column(InvMixer, inv_state_mat)
-
-########### round 10 ########################
+########## round 0 ########################
+inv_state_mat=xor_matrices(cipherTextMatrices[0],roundKeyMatrices[10])
+for i in range(1,10):
     inv_state_mat = cyclic_right_shift_whole_mat(inv_state_mat)
     inv_state_mat = byte_substitution_matrix(inv_state_mat,False)
-    inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[0])
-    tempInv=xor_matrices(inv_state_mat,tempIV)  ############################## just for iv
-    tempIV=cipherTextMatrices[d]
-    print()
-    cipher_in_1d=convert_2d_to_1d_column_major(tempInv)
-    sen=hex_array_to_sentence(cipher_in_1d)
-    afterDecryptionSentences.append(sen)
+    inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[10 - i])
+    inv_state_mat = mix_column(InvMixer, inv_state_mat)
 
-###################### print the list of strings #####################
-for sentence in afterDecryptionSentences:
-    print(sentence, end='')
+########### round 10 ########################
+inv_state_mat = cyclic_right_shift_whole_mat(inv_state_mat)
+inv_state_mat = byte_substitution_matrix(inv_state_mat,False)
+inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[0])
+print()
+cipher_in_1d=convert_2d_to_1d_column_major(inv_state_mat)
+sen=hex_array_to_sentence(cipher_in_1d)
+print(sen)
+
+
 
 
 
