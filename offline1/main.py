@@ -283,8 +283,8 @@ def print_list_of_matrices(matrix_list):
 
 ##################################################### main() ###############################
 print("Key")
-#sentence = input()
-sentence = "BUET CSE19 Batch"
+sentence = input()
+# sentence = "BUET CSE19 Batch"
 print("In ASCII :",sentence)
 print("In Hex :")
 plain_text_handling(sentence, key)

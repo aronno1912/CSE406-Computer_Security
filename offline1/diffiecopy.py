@@ -112,9 +112,9 @@ def get_y_from_elliptic_curve(x):
     y=int(math.sqrt(y2))
     return y
 
-def compute_R(ownPrivateKey,recvPublicKey):
-    pub_x=recvPublicKey
-    pub_y=get_y_from_elliptic_curve(pub_x)
+def compute_R(ownPrivateKey,recvPublicKey_x,recvPublicKey_y):
+    pub_x=recvPublicKey_x
+    pub_y=recvPublicKey_y
     tempx,tempy=scaler_point_mult(pub_x,pub_y,ownPrivateKey,a)
     R=tempx%P
     return R
@@ -134,15 +134,20 @@ def all_calculation(howManyBit):
         start_A = time.time()
         secretKey_A = get_random_number(P)  # K_a
         rx, ry = scaler_point_mult(x, y, secretKey_A, a)
-        publicKey_A = rx % P  # K_a*G mod P which is A
+        publicKey_Ax = rx % P  # K_a*G mod P which is A
+        publicKey_Ay = ry % P
         end_A = time.time()
         start_B = time.time()
         secretKey_B = get_random_number(P)  # K_b
         rrx, rry = scaler_point_mult(x, y, secretKey_B, a)
-        publicKey_B = rrx % P  # K_b*G mod P   which is B
+        publicKey_Bx = rrx % P  # K_b*G mod P   which is B
+        publicKey_By = rry % P
         end_B = time.time()
         start_R = time.time()
-        R = compute_R(secretKey_A, publicKey_B)
+        R = compute_R(secretKey_A, publicKey_Bx,publicKey_By)
+        R2 = compute_R(secretKey_B, publicKey_Ax, publicKey_Ay)
+        print(R)
+        print(R2)
         end_R = time.time()
         time_A = time_A + (end_A - start_A)
         time_B = time_B + (end_B - start_B)
