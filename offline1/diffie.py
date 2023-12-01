@@ -109,7 +109,8 @@ def scaler_point_mult(x1,y1,secretKey,a,P):
 
 def get_y_from_elliptic_curve(x):
     y2=x**3 + a*x + b
-    y=int(math.sqrt(y2))
+    y=(math.sqrt(y2))
+    print("Y is  ",y)
     return y
 
 def compute_R(ownPrivateKey,recvPublicKey,P):
