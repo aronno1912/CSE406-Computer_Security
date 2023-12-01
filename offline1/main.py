@@ -282,95 +282,100 @@ def print_list_of_matrices(matrix_list):
 
 
 ##################################################### main() ###############################
-print("Key")
-sentence = input()
-# sentence = "BUET CSE19 Batch"
-print("In ASCII :",sentence)
-print("In Hex :")
-plain_text_handling(sentence, key)
-originalKeyMat = []
-originalKeyMat = convert_to_matrix_row_major(key)
-generateAllRoundKeyMatrices(originalKeyMat)
-#print_list_of_matrices(roundKeyMatrices)
-print("Plain Text :")
-# msg=input()
-msg="Never Gonna Give you up"
-print("In ASCII :",msg)
-print("In Hex :")
-plain_text_handling(msg, ptWithPad)
-convert_to_matrix(ptWithPad,msgMatrices)
-initializationVector=generate_random_iv_matrix()
-tempIV=initializationVector
-print()
-print("Ciphered Text :")
-print("In Hex :")
-st_enc=time.time()
-# Iterate over the size of msgMatrices list
-for iter in range(len(msgMatrices)):
+def main():
+    print("Key")
+    sentence = input()
+    # sentence = "BUET CSE19 Batch"
+    print("In ASCII :", sentence)
+    print("In Hex :")
+    plain_text_handling(sentence, key)
+    originalKeyMat = []
+    originalKeyMat = convert_to_matrix_row_major(key)
+    generateAllRoundKeyMatrices(originalKeyMat)
+    # print_list_of_matrices(roundKeyMatrices)
+    print("Plain Text :")
+    # msg=input()
+    msg = "Never Gonna Give you up"
+    print("In ASCII :", msg)
+    print("In Hex :")
+    plain_text_handling(msg, ptWithPad)
+    convert_to_matrix(ptWithPad, msgMatrices)
+    initializationVector = generate_random_iv_matrix()
+    tempIV = initializationVector
+    print()
+    print("Ciphered Text :")
+    print("In Hex :")
+    st_enc = time.time()
+    # Iterate over the size of msgMatrices list
+    for iter in range(len(msgMatrices)):
 
-    tempMat=xor_matrices(msgMatrices[iter],tempIV)
-    ###################### round 0 #####################################################
-    state_mat = xor_matrices(tempMat, roundKeyMatrices[0])
+        tempMat = xor_matrices(msgMatrices[iter], tempIV)
+        ###################### round 0 #####################################################
+        state_mat = xor_matrices(tempMat, roundKeyMatrices[0])
 
-    #####################Rounds 1 to 9 ################################
-    for i in range(1, 10):
+        #####################Rounds 1 to 9 ################################
+        for i in range(1, 10):
+            state_mat = byte_substitution_matrix(state_mat, True)
+            state_mat = cyclic_left_shift_whole_mat(state_mat)
+            state_mat = mix_column(Mixer, state_mat)
+            state_mat = xor_matrices(state_mat, roundKeyMatrices[i])
+
+        #####################Round 10#########################################
         state_mat = byte_substitution_matrix(state_mat, True)
         state_mat = cyclic_left_shift_whole_mat(state_mat)
-        state_mat = mix_column(Mixer, state_mat)
-        state_mat = xor_matrices(state_mat, roundKeyMatrices[i])
+        state_mat = xor_matrices(state_mat, roundKeyMatrices[10])
+        tempIV = state_mat
 
-    #####################Round 10#########################################
-    state_mat = byte_substitution_matrix(state_mat, True)
-    state_mat = cyclic_left_shift_whole_mat(state_mat)
-    state_mat = xor_matrices(state_mat, roundKeyMatrices[10])
-    tempIV=state_mat
+        # print_matrix(state_mat)
+        cipherTextMatrices.append(state_mat)
+    print_list_of_matrices(cipherTextMatrices)
+    print()
+    print("In ASCII :")
+    hex_matrices_to_sentence(cipherTextMatrices)
+    ############################## done with encryption ##################
+    end_enc = time.time()
+    tempIV = initializationVector
+    print()
+    print()
+    print("Deciphered Text :")
+    print("In Hex :")
 
-    #print_matrix(state_mat)
-    cipherTextMatrices.append(state_mat)
-print_list_of_matrices(cipherTextMatrices)
-print()
-print("In ASCII :")
-hex_matrices_to_sentence(cipherTextMatrices)
-############################## done with encryption ##################
-end_enc=time.time()
-tempIV=initializationVector
-print()
-print()
-print("Deciphered Text :")
-print("In Hex :")
+    st_dec = time.time()
+    ############################## start decryption ##############################
+    for d in range(len(msgMatrices)):
 
-st_dec=time.time()
-############################## start decryption ##############################
-for d in range(len(msgMatrices)):
+        inv_state_mat = xor_matrices(cipherTextMatrices[d], roundKeyMatrices[10])
+        for i in range(1, 10):
+            inv_state_mat = cyclic_right_shift_whole_mat(inv_state_mat)
+            inv_state_mat = byte_substitution_matrix(inv_state_mat, False)
+            inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[10 - i])
+            inv_state_mat = mix_column(InvMixer, inv_state_mat)
 
-    inv_state_mat=xor_matrices(cipherTextMatrices[d],roundKeyMatrices[10])
-    for i in range(1,10):
+        ########### round 10 ########################
         inv_state_mat = cyclic_right_shift_whole_mat(inv_state_mat)
-        inv_state_mat = byte_substitution_matrix(inv_state_mat,False)
-        inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[10 - i])
-        inv_state_mat = mix_column(InvMixer, inv_state_mat)
+        inv_state_mat = byte_substitution_matrix(inv_state_mat, False)
+        inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[0])
+        tempInv = xor_matrices(inv_state_mat, tempIV)  ############################## just for iv
+        tempIV = cipherTextMatrices[d]
+        cipher_in_1d = convert_2d_to_1d_column_major(tempInv)
+        print(' '.join(map(str, cipher_in_1d)))
+        sen = hex_array_to_sentence(cipher_in_1d)
+        afterDecryptionSentences.append(sen)
 
-########### round 10 ########################
-    inv_state_mat = cyclic_right_shift_whole_mat(inv_state_mat)
-    inv_state_mat = byte_substitution_matrix(inv_state_mat,False)
-    inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[0])
-    tempInv=xor_matrices(inv_state_mat,tempIV)  ############################## just for iv
-    tempIV=cipherTextMatrices[d]
-    cipher_in_1d=convert_2d_to_1d_column_major(tempInv)
-    print(' '.join(map(str, cipher_in_1d)))
-    sen=hex_array_to_sentence(cipher_in_1d)
-    afterDecryptionSentences.append(sen)
+    ###################### print the list of strings #####################
+    print("In ASCII :")
+    for sentence in afterDecryptionSentences:
+        print(sentence, end='')
+    end_dec = time.time()
+    print()
+    print("Execution Time Details :")
+    print("Key Scheduling Time(ms) :", (keySchTime))
+    print("Encryption Time(ms) :", (end_enc - st_enc) * 1000)
+    print("Decryption Time(ms) :", (end_dec - st_dec) * 1000)
 
-###################### print the list of strings #####################
-print("In ASCII :")
-for sentence in afterDecryptionSentences:
-    print(sentence, end='')
-end_dec=time.time()
-print()
-print("Execution Time Details :")
-print("Key Scheduling Time(ms) :",(keySchTime))
-print("Encryption Time(ms) :",(end_enc-st_enc)*1000)
-print("Decryption Time(ms) :",(end_dec-st_dec)*1000)
+
+if __name__ == "__main__":
+    main()
 
 
 ######################### example

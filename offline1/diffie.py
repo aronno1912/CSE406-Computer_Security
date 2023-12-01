@@ -59,7 +59,7 @@ def get_random_number(p):
 #         else:
 #             generate_parameter_a_b(P)
 #
-def point_doubling(x1,y1,a):
+def point_doubling(x1,y1,a,P):
     t1=number.inverse(2*y1, P)
     s=((3*x1**2 +a)*t1)%P
     x3=(s**2-(2*x1))%P
@@ -75,7 +75,7 @@ def point_doubling(x1,y1,a):
 #     y_result = (m * (x - x_result) - y) % p
 #     return x_result, y_result
 
-def point_addition(x1,y1,x2,y2):
+def point_addition(x1,y1,x2,y2,P):
     t1 = number.inverse(x2 - x1, P)
     s=((y2-y1)*t1)%P
     x3 = (s ** 2 - (x2+ x1)) % P
@@ -95,15 +95,15 @@ def point_addition(x1,y1,x2,y2):
 #     y3 = (ss * (x1 - x3) - y1) % P
 #
 #     return x3, y3
-def scaler_point_mult(x1,y1,secretKey,a):
+def scaler_point_mult(x1,y1,secretKey,a,P):
     bitNum=secretKey.bit_length()
     finalx,finaly=x1,y1
     for i in reversed(range(0,bitNum-1)):
-        finalx, finaly = point_doubling(finalx, finaly, a)
+        finalx, finaly = point_doubling(finalx, finaly, a,P)
         #if the current bit in the binary representation of the scalar secretKey is 1,
         # perform point addition using the add function.
         if secretKey & 1 << i:
-            finalx, finalx = point_addition(finalx, finaly, x1, y1)
+            finalx, finalx = point_addition(finalx, finaly, x1, y1,P)
     return finalx, finaly
 
 
@@ -112,12 +112,13 @@ def get_y_from_elliptic_curve(x):
     y=int(math.sqrt(y2))
     return y
 
-def compute_R(ownPrivateKey,recvPublicKey):
+def compute_R(ownPrivateKey,recvPublicKey,P):
     pub_x=recvPublicKey
     pub_y=get_y_from_elliptic_curve(pub_x)
-    tempx,tempy=scaler_point_mult(pub_x,pub_y,ownPrivateKey,a)
+    tempx,tempy=scaler_point_mult(pub_x,pub_y,ownPrivateKey,a,P)
     R=tempx%P
     return R
+
 
 
 
@@ -133,16 +134,16 @@ def all_calculation(howManyBit):
     for i in range(1, 6):
         start_A = time.time()
         secretKey_A = get_random_number(P)  # K_a
-        rx, ry = scaler_point_mult(x, y, secretKey_A, a)
+        rx, ry = scaler_point_mult(x, y, secretKey_A, a,P)
         publicKey_A = rx % P  # K_a*G mod P which is A
         end_A = time.time()
         start_B = time.time()
         secretKey_B = get_random_number(P)  # K_b
-        rrx, rry = scaler_point_mult(x, y, secretKey_B, a)
+        rrx, rry = scaler_point_mult(x, y, secretKey_B, a,P)
         publicKey_B = rrx % P  # K_b*G mod P   which is B
         end_B = time.time()
         start_R = time.time()
-        R = compute_R(secretKey_A, publicKey_B)
+        R = compute_R(secretKey_A, publicKey_B,P)
         end_R = time.time()
         time_A = time_A + (end_A - start_A)
         time_B = time_B + (end_B - start_B)
@@ -156,8 +157,12 @@ def all_calculation(howManyBit):
     print("R",time_R * 1000)
 
 #####################################  main    ###########################################
-print("For 128 bit :")
-all_calculation(128)
+def main():
+    print("For 128 bit :")
+    all_calculation(128)
+
+if __name__ == "__main__":
+    main()
 # print()
 # print("For 192 bit :")
 # all_calculation(192)
