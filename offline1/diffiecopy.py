@@ -61,12 +61,12 @@ def get_random_number(p):
 #
 def point_doubling(x1,y1,a,P):
     t1=number.inverse(2*y1, P)
-    s=((3*x1**2 +a)*t1)%P
+    s=((3*x1**2 +a)*pow(2*y1,-1,P))%P
     x3=(s**2-(2*x1))%P
     y3=((s*(x1-x3)-y1)%P)
     return x3,y3
 
-# def point_double(x,y, a,p):
+# def point_doubling(x,y, a,p):
 #     # Point doubling operation
 #     s = (3 * x * x + a) % p
 #     inv_s = pow(s, -1, p)
@@ -75,12 +75,35 @@ def point_doubling(x1,y1,a,P):
 #     y_result = (m * (x - x_result) - y) % p
 #     return x_result, y_result
 
-def point_addition(x1,y1,x2,y2,P):
+
+########################## use this ########################
+def point_addition(x1,y1,x2,y2,a,P):
     t1 = number.inverse(x2 - x1, P)
-    s=((y2-y1)*t1)%P
+    s=((y2-y1)*pow(x2 - x1, -1,P))%P
     x3 = (s ** 2 - (x2+ x1)) % P
     y3 = (s * (x1 - x3) - y1) % P
     return x3, y3
+
+#
+# def point_addition(x1, y1, x2, y2, a, p):
+#     if x1 == x2 and y1 == y2:
+#         # Point doubling if the points are the same
+#         return point_doubling(x1, y1, a, p)
+#
+#     # Calculate the slope of the line passing through the points
+#     if x1 != x2:
+#         slope = (y2 - y1) * pow(x2 - x1, -1, p) % p
+#     else:
+#         # Vertical line (point at infinity)
+#         return None
+#
+#     # Calculate the new x-coordinate
+#     x_result = (slope**2 - x1 - x2) % p
+#
+#     # Calculate the new y-coordinate
+#     y_result = (slope * (x1 - x_result) - y1) % p
+#
+#     return x_result, y_result
 
 
 
@@ -95,16 +118,44 @@ def point_addition(x1,y1,x2,y2,P):
 #     y3 = (ss * (x1 - x3) - y1) % P
 #
 #     return x3, y3
-def scaler_point_mult(x1,y1,secretKey,a,P):
-    bitNum=secretKey.bit_length()
-    finalx,finaly=x1,y1
-    for i in reversed(range(0,bitNum-1)):
-        finalx, finaly = point_doubling(finalx, finaly, a,P)
-        #if the current bit in the binary representation of the scalar secretKey is 1,
-        # perform point addition using the add function.
-        if secretKey & 1 << i:
-            finalx, finalx = point_addition(finalx, finaly, x1, y1,P)
-    return finalx, finaly
+# def scaler_point_mult(x1,y1,secretKey,a,P):
+#     bitNum=secretKey.bit_length()
+#     finalx,finaly=x1,y1
+#     for i in reversed(range(0,bitNum-1)):
+#         finalx, finaly = point_doubling(finalx, finaly, a,P)
+#         #if the current bit in the binary representation of the scalar secretKey is 1,
+#         # perform point addition using the add function.
+#         if secretKey & 1 << i:
+#             finalx, finalx = point_addition(finalx, finaly, x1, y1,P)
+#     return finalx, finaly
+
+
+# def scaler_point_mult(x1,y1,secretKey,a,P):
+#     secretKey_bin=bin(secretKey)[2:]
+#     finalx,finaly=x1,y1
+#     for i in range(1,len(secretKey_bin)):
+#         finalx, finaly = point_doubling(finalx, finaly, a,P)
+#         #if the current bit in the binary representation of the scalar secretKey is 1,
+#         # perform point addition using the add function.
+#         if secretKey_bin[i]=='1':
+#             finalx, finalx = point_addition(finalx, finaly, x1, y1,a,P)
+#     return finalx, finaly
+
+def scaler_point_mult(x1,y1,secretKey,a,p):
+    binary_representation = bin(secretKey)[3:]
+    x2 = x1
+    y2 = y1
+    for i, bit in enumerate(binary_representation):
+        #print('bit ', bit)
+        # bit = int(bit, 10)
+        # (x1, y1) = doubling(ka, a, x1, y1, p)
+        (x1, y1) = point_doubling(x1, y1, a, p)
+        # print('doubling: ', x1, y1)
+        if bit == '1':
+            x1, y1 = point_addition(x1, y1, x2, y2, a, p)
+            # print('addition: ', x1, y1)
+    #print('end')
+    return x1, y1
 
 
 def get_y_from_elliptic_curve(x):
@@ -151,9 +202,9 @@ def all_calculation(howManyBit):
         print("alice")
         R = compute_R(secretKey_A, publicKey_Bx,publicKey_By,P)
         print(R)
-        print("Bob")
-        print("Bob er private ,",secretKey_B)
-        print("rcv ",publicKey_Ax)
+        #print("Bob")
+        #print("Bob er private ,",secretKey_B)
+        #print("rcv ",publicKey_Ax)
 
         R2 = compute_R(secretKey_B, publicKey_Ax, publicKey_Ay, P)
         print(R2)

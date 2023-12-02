@@ -1,6 +1,6 @@
 ########################## BOB is the receiver(server)
 # import main as aes
-import diffie as dh
+import diffie_hellman as dh
 import socket
 
 
@@ -11,14 +11,15 @@ def generate_own_private_key(p):
     x=dh.get_random_number(p)
     return x
 
-def get_final_key(rcvedPublicKey,private_key,p):
-    computed_key=dh.compute_R(private_key,rcvedPublicKey,p)
+def get_final_key(rcvedPublicKey_x,rcvedPublicKey_y,private_key,p):
+    computed_key=dh.compute_R(private_key,rcvedPublicKey_x,rcvedPublicKey_y,p)
     return computed_key
 
 def generate_public_key(own_private_key,g_x,g_y,p,a):
     rx, ry = dh.scaler_point_mult(g_x, g_y, own_private_key, a, p)
-    publicKey_Bob = rx % p  #### k_a*G mod p
-    return publicKey_Bob
+    publicKey_Bob_x = rx % p  #### k_a*G mod p
+    publicKey_Bob_y=ry % p
+    return publicKey_Bob_x,publicKey_Bob_y
 
 
 
@@ -33,20 +34,25 @@ print("Connection Established!!!!!")
 length = client.recv(1024).decode()
 gotItems = client.recv(int(length)).decode()
 #print(gotItems)
-a, b, p,g_x,g_y,rcvedPublicKey = int(gotItems.split()[0]), int(gotItems.split()[1]), int(gotItems.split()[2]), int(gotItems.split()[3]),int(gotItems.split()[4]),int(gotItems.split()[5])
-print(a)
-print(b)
-print(p)
-print(g_x)
-print(g_y)
-print(rcvedPublicKey)
+a, b, p,g_x,g_y,rcvedPublicKey_x,rcvedPublicKey_y = int(gotItems.split()[0]), int(gotItems.split()[1]), int(gotItems.split()[2]), int(gotItems.split()[3]),int(gotItems.split()[4]),int(gotItems.split()[5]),int(gotItems.split()[6])
+# print(a)
+# print(b)
+# print(p)
+# print(g_x)
+# print(g_y)
+# print(rcvedPublicKey_x)
+# print(rcvedPublicKey_y)
 bob_private_key=generate_own_private_key(p)
-computed_key=get_final_key(rcvedPublicKey,bob_private_key,p)
+computed_key=get_final_key(rcvedPublicKey_x,rcvedPublicKey_y,bob_private_key,p)
+print("hereeeeeeee")
 print(computed_key)
 
-publicKey_Bob=generate_public_key(bob_private_key,g_x,g_y,p,a)
-client.sendall(str(publicKey_Bob).encode())  ############## sending bob's public key
-print("hereeeeeeee")
-print(publicKey_Bob)
+publicKey_Bob_x,publicKey_Bob_y=generate_public_key(bob_private_key,g_x,g_y,p,a)
+items = str(publicKey_Bob_x) + " " + str(publicKey_Bob_y)
+client.sendall(str(len(items)).encode())
+client.sendall(items.encode())   ############## sending bob's public key
+
+
+#print(publicKey_Bob_x)
 
 

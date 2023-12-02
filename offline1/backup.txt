@@ -1,0 +1,36 @@
+########################## use this ########################
+def point_addition(x1,y1,x2,y2,a,P):
+    t1 = number.inverse(x2 - x1, P)
+    s=((y2-y1)*pow(x2 - x1, -1,P))%P
+    x3 = (s ** 2 - (x2+ x1)) % P
+    y3 = (s * (x1 - x3) - y1) % P
+    return x3, y3
+
+
+
+def point_doubling(x1,y1,a,P):
+    t1=number.inverse(2*y1, P)
+    s=((3*x1**2 +a)*pow(2*y1,-1,P))%P
+    x3=(s**2-(2*x1))%P
+    y3=((s*(x1-x3)-y1)%P)
+    return x3,y3
+
+
+
+
+
+def scaler_point_mult(x1,y1,secretKey,a,p):
+    binary_representation = bin(secretKey)[3:]
+    x2 = x1
+    y2 = y1
+    for i, bit in enumerate(binary_representation):
+        #print('bit ', bit)
+        # bit = int(bit, 10)
+        # (x1, y1) = doubling(ka, a, x1, y1, p)
+        (x1, y1) = point_doubling(x1, y1, a, p)
+        # print('doubling: ', x1, y1)
+        if bit == '1':
+            x1, y1 = point_addition(x1, y1, x2, y2, a, p)
+            # print('addition: ', x1, y1)
+    #print('end')
+    return x1, y1
