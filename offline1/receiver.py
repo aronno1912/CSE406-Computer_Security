@@ -1,11 +1,11 @@
 ########################## BOB is the receiver(server)
-# import main as aes
+import aesHelper as aes
 import diffie_hellman as dh
 import socket
 
 
 HOST = '127.0.0.1'
-PORT = 56565
+PORT = 46566
 
 def generate_own_private_key(p):
     x=dh.get_random_number(p)
@@ -44,13 +44,34 @@ a, b, p,g_x,g_y,rcvedPublicKey_x,rcvedPublicKey_y = int(gotItems.split()[0]), in
 # print(rcvedPublicKey_y)
 bob_private_key=generate_own_private_key(p)
 computed_key=get_final_key(rcvedPublicKey_x,rcvedPublicKey_y,bob_private_key,p)
-print("hereeeeeeee")
 print(computed_key)
 
 publicKey_Bob_x,publicKey_Bob_y=generate_public_key(bob_private_key,g_x,g_y,p,a)
 items = str(publicKey_Bob_x) + " " + str(publicKey_Bob_y)
 client.sendall(str(len(items)).encode())
 client.sendall(items.encode())   ############## sending bob's public key
+
+while True:
+    # receive message
+    receivedMessage = client.recv(1024).decode()
+    plainText=aes.do_decryption(str(computed_key),receivedMessage)
+
+    if plainText == 'end':
+        break
+    print()
+    print("Received cipher: " + receivedMessage)
+    print("Alice: " + plainText)
+
+    ####################send message
+    message = input("Bob: ")
+    cipherText = aes.do_encryption(str(computed_key), message)
+    print("Sending cipher: " + cipherText)
+    client.send(cipherText.encode())
+
+    if message == 'stop!!!':
+        break
+client.close()
+server.close()
 
 
 #print(publicKey_Bob_x)

@@ -1,12 +1,12 @@
 ###################### Alice is the sender (Client) ###################
 
-# import main as aes
+import aesHelper as aes
 import diffie_hellman as dh
 import socket
 
 
 HOST = '127.0.0.1'
-PORT = 56565
+PORT = 46566
 ########### send a,b, p, G(point), k_a*G mod p
 def generate_what_to_send_initially(bit):
     p=dh.generate_random_prime(bit)
@@ -55,5 +55,25 @@ bob_key_x,bob_key_y = int(gotItems.split()[0]), int(gotItems.split()[1])
 
 
 final_key=get_final_key(bob_key_x,bob_key_y,own_private_key,p)
-print("hereeeeeeee")
 print(final_key)
+
+while True:
+    # send message
+    message = input("Alice: ")
+    cipherText=aes.do_encryption(str(final_key), message)
+    print("Sending cipher: ")
+    print(cipherText)
+    client.sendall(cipherText.encode())
+    if message == 'end':
+        break
+
+    ##########receive message
+    receivedMessage = client.recv(1024).decode()
+    plainText = aes.do_decryption(str(final_key),receivedMessage)
+
+    if plainText == 'stop!!!':
+        break
+
+    print("Received cipher: " + receivedMessage)
+    print("Bob: " + plainText)
+client.close()

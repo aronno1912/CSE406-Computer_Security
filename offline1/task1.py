@@ -7,7 +7,7 @@ ptWithPad = []
 roundKeyMatrices = []
 msgMatrices = []
 cipherTextMatrices = []
-initializationVector=[['46', 'ce', '24', 'e4'], ['79', 'e1', '63', 'a3'], ['24', '5a', '29', '03'], ['a1', 'c9', '98', '74']]
+initializationVector=[]
 afterDecryptionSentences=[]
 keySchTime=0.0
 
@@ -30,16 +30,6 @@ def generate_random_iv_matrix():
 
     return iv_matrix
 
-###### takes a list of matries of hex strings a returns a string with ascii chars
-def matrices_to_string(matrix_list):
-    result_string = ""
-
-    for matrix in matrix_list:
-        hex_array = [element for row in matrix for element in row]
-        sentence = hex_array_to_sentence(hex_array)
-        result_string += sentence
-
-    return result_string
 
 def convert_str_array_to_int(input_array):
     int_array = [int(element) for element in input_array]
@@ -96,9 +86,9 @@ def plain_text_handling(sentence, array):
         array.append('20')         ########################       space padding!!!!!!!!!
 
     # Split into blocks of length 16 and print
-    # for i in range(0, len(array), 16):
-    #     block = array[i:i + 16]
-    #     print(' '.join(block))
+    for i in range(0, len(array), 16):
+        block = array[i:i + 16]
+        print(' '.join(block))
 
 
 ######################## make matrix ##################################
@@ -113,15 +103,6 @@ def convert_to_matrix(ptWithPad, listOfMat):
                   range(i * 16, (i + 1) * 16, 4)]
         transposed_matrix = list(map(list, zip(*matrix)))
         listOfMat.append(transposed_matrix)
-
-def convert_to_matrix2(ptWithPad, listOfMat):
-    num_matrices = len(ptWithPad) // 16
-
-    for i in range(num_matrices):
-        matrix = [[ptWithPad[j], ptWithPad[j + 1], ptWithPad[j + 2], ptWithPad[j + 3]] for j in
-                  range(i * 16, (i + 1) * 16, 4)]
-        #transposed_matrix = list(map(list, zip(*matrix)))
-        listOfMat.append(matrix)
 
 
 
@@ -254,6 +235,7 @@ def generateAllRoundKeyMatrices(initial_matrix):
     roundKeyMatrices.append(transposed_matrix)
 
     for i in range(1, 11):
+        # Call your roundKey function here with the appropriate arguments
         new_matrix = roundKey(initial_matrix,i)
         roundKeyMatrices.append(new_matrix)
         transposed_matrix = [list(row) for row in zip(*new_matrix)]
@@ -294,91 +276,8 @@ def print_list_of_matrices(matrix_list):
             print(' '.join(map(str, row)), end=" ")
 
 
-def print_list_of_matrices2(matrix_list):
-    for idx, matrix in enumerate(matrix_list, start=1):
-        print(f"Matrix {idx}:")
-        for row in matrix:
-            print(' '.join(row))
-        print()  # Add a new line between matrices
-
 
 ##################################################################################################
-
-
-def do_encryption(sharedKey,msg):
-    global initializationVector
-    plain_text_handling(sharedKey, key)
-    originalKeyMat = convert_to_matrix_row_major(key)
-    generateAllRoundKeyMatrices(originalKeyMat)
-    plain_text_handling(msg, ptWithPad)
-    convert_to_matrix(ptWithPad, msgMatrices)
-    tempIV = initializationVector
-    # Iterate over the size of msgMatrices list
-    for iter in range(len(msgMatrices)):
-
-        tempMat = xor_matrices(msgMatrices[iter], tempIV)
-        ###################### round 0 #####################################################
-        state_mat = xor_matrices(tempMat, roundKeyMatrices[0])
-
-        #####################Rounds 1 to 9 ################################
-        for i in range(1, 10):
-            state_mat = byte_substitution_matrix(state_mat, True)
-            state_mat = cyclic_left_shift_whole_mat(state_mat)
-            state_mat = mix_column(Mixer, state_mat)
-            state_mat = xor_matrices(state_mat, roundKeyMatrices[i])
-
-        #####################Round 10#########################################
-        state_mat = byte_substitution_matrix(state_mat, True)
-        state_mat = cyclic_left_shift_whole_mat(state_mat)
-        state_mat = xor_matrices(state_mat, roundKeyMatrices[10])
-        tempIV = state_mat
-
-        # print_matrix(state_mat)
-        cipherTextMatrices.append(state_mat)
-    str=matrices_to_string(cipherTextMatrices)
-    cipherTextMatrices.clear()
-    msgMatrices.clear()
-    afterDecryptionSentences.clear()
-    ptWithPad.clear()
-    return str
-
-
-def do_decryption(sharedKey,msg):
-    global initializationVector
-    plain_text_handling(sharedKey, key)
-    originalKeyMat = convert_to_matrix_row_major(key)
-    generateAllRoundKeyMatrices(originalKeyMat)
-    plain_text_handling(msg, ptWithPad)
-    convert_to_matrix2(ptWithPad, msgMatrices)
-    tempIV = initializationVector
-    for d in range(len(msgMatrices)):
-
-        inv_state_mat = xor_matrices(msgMatrices[d], roundKeyMatrices[10])
-        for i in range(1, 10):
-            inv_state_mat = cyclic_right_shift_whole_mat(inv_state_mat)
-            inv_state_mat = byte_substitution_matrix(inv_state_mat, False)
-            inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[10 - i])
-            inv_state_mat = mix_column(InvMixer, inv_state_mat)
-
-        ########### round 10 ########################
-        inv_state_mat = cyclic_right_shift_whole_mat(inv_state_mat)
-        inv_state_mat = byte_substitution_matrix(inv_state_mat, False)
-        inv_state_mat = xor_matrices(inv_state_mat, roundKeyMatrices[0])
-        tempInv = xor_matrices(inv_state_mat, tempIV)  ############################## just for iv
-        tempIV = msgMatrices[d]
-        #print("ekhane")
-        cipher_in_1d = convert_2d_to_1d_column_major(tempInv)
-        #print(' '.join(map(str, cipher_in_1d)))
-        sen = hex_array_to_sentence(cipher_in_1d)
-        afterDecryptionSentences.append(sen)
-
-    result_string = ''.join(afterDecryptionSentences)
-    cipherTextMatrices.clear()
-    msgMatrices.clear()
-    afterDecryptionSentences.clear()
-    ptWithPad.clear()
-    return result_string
-
 
 
 
@@ -390,6 +289,7 @@ def main():
     print("In ASCII :", sentence)
     print("In Hex :")
     plain_text_handling(sentence, key)
+    originalKeyMat = []
     originalKeyMat = convert_to_matrix_row_major(key)
     generateAllRoundKeyMatrices(originalKeyMat)
     # print_list_of_matrices(roundKeyMatrices)
