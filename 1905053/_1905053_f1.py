@@ -1,6 +1,7 @@
 from _1905053_f0 import *
 import os
 import time
+import datetime
 
 key = []
 ptWithPad = []
@@ -312,10 +313,14 @@ def main():
     print("In ASCII :", sentence)
     print("In Hex :")
     key = key_input_handling(sentence)
-    print("key is ",key)
+    #print("key is ",key)
     originalKeyMat = []
     originalKeyMat = convert_to_matrix_row_major(key)
+    start_r=datetime.datetime.now()
     generateAllRoundKeyMatrices(originalKeyMat)
+    #print("helllo")
+    #print_list_of_matrices(roundKeyMatrices)
+    end_r=datetime.datetime.now()
     # print_list_of_matrices(roundKeyMatrices)
     print("Plain Text :")
     msg=input()
@@ -395,7 +400,7 @@ def main():
     print()
     print()
     print("Execution Time Details :")
-    print("Key Scheduling Time(ms) :", (keySchTime))
+    print("Key Scheduling Time(ms) :", ((end_r-start_r).microseconds)/1000)
     print("Encryption Time(ms) :", (end_enc - st_enc) * 1000)
     print("Decryption Time(ms) :", (end_dec - st_dec) * 1000)
 
